@@ -120,7 +120,7 @@ public class main { // Renamed to follow Java conventions
                 if (authenticateUser(email, password)) {
                     JOptionPane.showMessageDialog(frame, "Login Successful!");
                     frame.dispose(); // Close login window
-                    new UserDashboard(); // Open User Dashboard
+                     UserDashboard.main(null); // Open User Dashboard
                 }else if (authenticateAdmin(email, password)) {
                     JOptionPane.showMessageDialog(frame, "Login Successful!");
                     new AdminPanel();

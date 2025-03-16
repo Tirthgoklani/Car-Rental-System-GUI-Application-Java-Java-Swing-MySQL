@@ -226,7 +226,7 @@ public class user {
             if (rowsAffected > 0) {
                 JOptionPane.showMessageDialog(frame, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 frame.dispose();
-                
+                UserDashboard.main(null);
             } else {
                 JOptionPane.showMessageDialog(frame, "Sign-up failed. Try again!", "Error", JOptionPane.ERROR_MESSAGE);
             }
