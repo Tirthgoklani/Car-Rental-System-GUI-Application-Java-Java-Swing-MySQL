@@ -5,6 +5,7 @@ import javax.swing.border.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 
 import com.formdev.flatlaf.FlatDarkLaf;
+import com.toedter.calendar.JCalendar;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -18,6 +19,7 @@ public class UserDashboard {
     private JFrame frame;
     private JPanel mainPanel;
     private JScrollPane scrollPane;
+    private int currentUserId; // To store the logged-in user's ID
     
     // Database connection properties
     private static final String DB_URL = "jdbc:mysql://localhost:3309/car_rental";
@@ -33,7 +35,8 @@ public class UserDashboard {
     private Color textColor = new Color(240, 240, 240);      // Light text
     private Color secondaryTextColor = new Color(180, 180, 180); // Secondary text
 
-    public UserDashboard() {
+    public UserDashboard(int userId) {
+        this.currentUserId = userId;
         setupLookAndFeel();
         buildInterface();
         try {
@@ -397,7 +400,7 @@ public class UserDashboard {
     
     private void showRentDialog(String carDetails, int carId) {
         JDialog rentDialog = new JDialog(frame, "Rent Car", true);
-        rentDialog.setSize(500, 500); // Larger dialog
+        rentDialog.setSize(490, 550); // Larger dialog
         rentDialog.setLocationRelativeTo(frame);
         rentDialog.setLayout(new BorderLayout());
         
@@ -451,8 +454,10 @@ public class UserDashboard {
         // Add components to form panel
         formPanel.add(pickupLabel);
         formPanel.add(pickupDate);
+        formPanel.add(pickupLabel);
+        formPanel.add(createDateChooserPanel(pickupDate));
         formPanel.add(returnLabel);
-        formPanel.add(returnDate);
+        formPanel.add(createDateChooserPanel(returnDate));
         formPanel.add(paymentLabel);
         formPanel.add(paymentCombo);
         formPanel.add(insuranceLabel);
@@ -518,30 +523,26 @@ public class UserDashboard {
         rentDialog.setVisible(true);
     }
     
-    private boolean createRentalInDatabase(int carId, String pickupDate, String returnDate, 
-                                          String paymentMethod, String insurance) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            // Assuming you have a users table and the current user is identified
-            int userId = 1; // This would normally come from a logged-in user session
-            
-            String sql = "INSERT INTO rentals (car_id, user_id, pickup_date, return_date, " +
-                         "payment_method, insurance, status) VALUES (?, ?, ?, ?, ?, ?, 'CONFIRMED')";
-            
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, carId);
-                pstmt.setInt(2, userId);
-                pstmt.setString(3, pickupDate);
-                pstmt.setString(4, returnDate);
-                pstmt.setString(5, paymentMethod);
-                pstmt.setString(6, insurance);
-                
-                int rowsAffected = pstmt.executeUpdate();
-                return rowsAffected > 0;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+    private boolean createRentalInDatabase(int carId, String pickupDate, String returnDate,String paymentMethod, String insurance) {
+    		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+    				// Use the current user's ID instead of hardcoded value
+    			String sql = "INSERT INTO rentals (car_id, user_id, pickup_date, return_date, " + "payment_method, insurance, status) VALUES (?, ?, ?, ?, ?, ?, 'CONFIRMED')";
+
+    			try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    				pstmt.setInt(1, carId);
+    				pstmt.setInt(2, currentUserId); // Use the stored user ID
+    				pstmt.setString(3, pickupDate);
+    				pstmt.setString(4, returnDate);
+    				pstmt.setString(5, paymentMethod);
+    				pstmt.setString(6, insurance);
+
+    				int rowsAffected = pstmt.executeUpdate();
+    				return rowsAffected > 0;
+    			}
+    		} catch (SQLException e) {
+    			e.printStackTrace();
+    			return false;
+    		}
     }
     
     private boolean updateCarAvailability(int carId, boolean available) {
@@ -564,7 +565,7 @@ public class UserDashboard {
     
     private JFormattedTextField createStyledDateField() {
         // Create a formatted text field for dates
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         JFormattedTextField dateField = new JFormattedTextField(dateFormat);
         dateField.setValue(new Date()); // Set current date as default
         dateField.setBackground(darkSecondaryColor);
@@ -572,7 +573,7 @@ public class UserDashboard {
         dateField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         dateField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(70, 70, 70), 1),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+            BorderFactory.createEmptyBorder(5, 31, 5, 31)
         ));
         return dateField;
     }
@@ -591,23 +592,37 @@ public class UserDashboard {
         // Success icon (checkmark simulation)
         JPanel iconPanel = new JPanel() {
             @Override
+            
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Draw circle
-                g2d.setColor(new Color(39, 174, 96));
-                g2d.fillOval(0, 0, 60, 60);
+                int size = 60; // Circle size
+                int centerX = getWidth() / 2 - size / 2;
+                int centerY = getHeight() / 2 - size / 2;
 
-                // Draw checkmark
+                // Draw circle centered
+                g2d.setColor(new Color(39, 174, 96));
+                g2d.fillOval(centerX, centerY, size, size);
+
+                // Draw checkmark dynamically positioned
                 g2d.setColor(Color.WHITE);
                 g2d.setStroke(new BasicStroke(4));
-                g2d.drawLine(15, 30, 25, 45);
-                g2d.drawLine(25, 45, 45, 15);
+
+                int checkX1 = centerX + 15;
+                int checkY1 = centerY + 30;
+                int checkX2 = centerX + 25;
+                int checkY2 = centerY + 45;
+                int checkX3 = centerX + 45;
+                int checkY3 = centerY + 15;
+
+                g2d.drawLine(checkX1, checkY1, checkX2, checkY2);
+                g2d.drawLine(checkX2, checkY2, checkX3, checkY3);
 
                 g2d.dispose();
             }
+
 
             @Override
             public Dimension getPreferredSize() {
@@ -618,6 +633,7 @@ public class UserDashboard {
         iconPanel.setPreferredSize(new Dimension(100, 70));
 
         iconPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        iconPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
 
         // Success messages
         JLabel successLabel = new JLabel(title);
@@ -712,11 +728,10 @@ public class UserDashboard {
     private List<Car> getRentedCarsFromDatabase() throws SQLException {
         List<Car> rentedCars = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            int userId = 1; // Assuming user_id is 1
             String sql = "SELECT c.* FROM cars c JOIN rentals r ON c.id = r.car_id " +
                          "WHERE r.user_id = ? AND r.status = 'CONFIRMED'";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, userId);
+                pstmt.setInt(1, currentUserId); // Use the stored user ID
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
                         Car car = new Car(
@@ -739,12 +754,11 @@ public class UserDashboard {
 
     private boolean returnCar(int carId) {
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            int userId = 1; // Assuming user_id is 1
             String sql = "UPDATE rentals SET return_date = CURRENT_DATE(), status = 'Returned' " +
                          "WHERE car_id = ? AND user_id = ? AND status = 'CONFIRMED'";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, carId);
-                pstmt.setInt(2, userId);
+                pstmt.setInt(2, currentUserId); // Use the stored user ID
                 int rowsAffected = pstmt.executeUpdate();
                 if (rowsAffected > 0) {
                     // Update car availability
@@ -815,6 +829,7 @@ public class UserDashboard {
 
         addDetailRow(detailsPanel, "Color:", car.getColor());
         addDetailRow(detailsPanel, "Seats:", String.valueOf(car.getSeats()));
+        addDetailRow(detailsPanel, "Fuel Type:", car.getfuel_type());
         addDetailRow(detailsPanel, "Price:", "₹" + car.getPricePerDay() + "/day");
 
         // Create a modern "Return Car" button with animated hover effect
@@ -938,21 +953,87 @@ public class UserDashboard {
         rentalsFrame.add(scrollPane, BorderLayout.CENTER);
         rentalsFrame.setVisible(true);
     }
-
-
-    public static void main(String[] args) {
-        // Set up database connection
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("MySQL JDBC Driver not found");
-            e.printStackTrace();
-            return;
-        }
+    
+    private JPanel createDateChooserPanel(JFormattedTextField dateField) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        panel.add(dateField);
+        ImageIcon originalIcon = new ImageIcon("C:/Users/Tirth/Pictures/cars/calendar-icon-png-transparent-3.png");
         
-        // Launch the UI
-        SwingUtilities.invokeLater(() -> {
-            new UserDashboard();
+        // Resize the image
+        Image scaledImage = originalIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        ImageIcon scaledIcon = new ImageIcon(scaledImage);
+        
+        JButton calendarButton = new JButton(scaledIcon);
+        calendarButton.setPreferredSize(new Dimension(30, 30)); // Adjust the button size if needed
+        
+        calendarButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showCalendarDialog(dateField);
+            }
         });
+        
+        panel.add(calendarButton);
+        return panel;
+    }
+    
+    private void showCalendarDialog(final JFormattedTextField dateField) {
+        JDialog dialog = new JDialog(frame, "Select Date", true);
+        dialog.setSize(300, 250);
+        dialog.setLocationRelativeTo(frame);
+
+        JCalendar calendar = new JCalendar();
+        calendar.setDate((Date) dateField.getValue());
+
+        // Customize JCalendar colors to match dark theme
+        calendar.setBackground(darkSecondaryColor);
+        calendar.setBackground(darkCardColor);
+        calendar.setBackground(darkCardColor);
+        calendar.setBackground(textColor);
+        // Add more color customizations as needed, referring to JCalendar API
+
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dateField.setValue(calendar.getDate());
+                dialog.dispose();
+            }
+        });
+
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+
+        dialog.add(calendar, java.awt.BorderLayout.CENTER);
+        dialog.add(buttonPanel, java.awt.BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
     }
 }
+
+
+//    public static void main(String[] args) {
+//        // Set up database connection
+//        try {
+//            Class.forName("com.mysql.cj.jdbc.Driver");
+//        } catch (ClassNotFoundException e) {
+//            System.err.println("MySQL JDBC Driver not found");
+//            e.printStackTrace();
+//            return;
+//        }
+//        
+//        // Launch the UI
+//        SwingUtilities.invokeLater(() -> {
+//            new UserDashboard(userID);
+//        });
+//    }
+//}

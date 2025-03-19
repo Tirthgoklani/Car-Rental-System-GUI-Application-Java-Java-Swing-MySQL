@@ -15,7 +15,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import control.ButtonHoverEffect;
-import control.GradientPanel;
+//import control.GradientPanel;
+
 
 public class main { // Renamed to follow Java conventions
     public static void main(String[] args) {
@@ -117,18 +118,15 @@ public class main { // Renamed to follow Java conventions
                 String email = emailField.getText();
                 String password = new String(passwordField.getPassword());
 
-                if (authenticateUser(email, password)) {
-                    JOptionPane.showMessageDialog(frame, "Login Successful!");
-                    frame.dispose(); // Close login window
-                     UserDashboard.main(null); // Open User Dashboard
-                }else if (authenticateAdmin(email, password)) {
-                    JOptionPane.showMessageDialog(frame, "Login Successful!");
-                    new AdminPanel();
-                    
-                    
-                }
-                else {
-                    JOptionPane.showMessageDialog(frame, "Invalid email or password", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                int userId = authenticateUser(email, password);
+                if (userId != -1) {
+                    frame.dispose();
+                    new UserDashboard(userId);
+                } else if (authenticateAdmin(email, password)) {                	
+                    frame.dispose();
+                    new AdminPanel(); // Assuming AdminPanel is defined
+                } else {
+                    javax.swing.JOptionPane.showMessageDialog(frame, "Invalid email or password", "Login Failed", javax.swing.JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -197,23 +195,25 @@ public class main { // Renamed to follow Java conventions
     }
 
     // ✅ Function to Authenticate User with Database
-    private static boolean authenticateUser(String email, String password) {
+    private static int authenticateUser(String email, String password) {
         String url = "jdbc:mysql://localhost:3309/car_rental";
-        String user = "root"; // Change if you have a different username
-        String pass = ""; // Change if you have a password
+        String user = "root";
+        String pass = "";
 
         try (Connection con = DriverManager.getConnection(url, user, pass)) {
-        	String query = "SELECT 1 FROM users WHERE email = ? AND password = ? AND banned = 0";
+            String query = "SELECT id FROM users WHERE email = ? AND password = ? AND banned = 0";
             PreparedStatement pst = con.prepareStatement(query);
             pst.setString(1, email);
             pst.setString(2, password);
 
             ResultSet rs = pst.executeQuery();
-            return rs.next(); // Returns true if user exists
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
         }
+        return -1; // User not found or error
     }
     private static boolean authenticateAdmin(String email, String password) {
         String url = "jdbc:mysql://localhost:3309/car_rental";
@@ -234,6 +234,3 @@ public class main { // Renamed to follow Java conventions
         }
     }
 }
-    
-
-

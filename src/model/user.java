@@ -225,8 +225,22 @@ public class user {
             int rowsAffected = pst.executeUpdate();
             if (rowsAffected > 0) {
                 JOptionPane.showMessageDialog(frame, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                frame.dispose();
-                UserDashboard.main(null);
+                
+                // Get the user ID of the newly created user
+                String getUserIdQuery = "SELECT id FROM users WHERE email = ?";
+                pst = con.prepareStatement(getUserIdQuery);
+                pst.setString(1, email);
+                rs = pst.executeQuery();
+                
+                if (rs.next()) {
+                    int userId = rs.getInt("id");
+                    frame.dispose();
+                    new UserDashboard(userId);
+                } else {
+                    // If unable to get user ID, go back to login
+                    frame.dispose();
+                    main.main(null);
+                }
             } else {
                 JOptionPane.showMessageDialog(frame, "Sign-up failed. Try again!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -247,6 +261,4 @@ public class user {
             }
         }
     }
-
-
 }

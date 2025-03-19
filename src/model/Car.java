@@ -5,6 +5,7 @@ public class Car {
     private String brand;
     private String model;
     private String color;
+    private String fuel_type;
     private int seats;
     private double pricePerDay;
     private String imagePath;
@@ -51,6 +52,10 @@ public class Car {
         return imagePath;
     }
     
+    public String getfuel_type() {
+        return fuel_type;
+    }
+    
     public boolean isAvailable() {
         return available;
     }
@@ -74,6 +79,10 @@ public class Car {
     
     public void setSeats(int seats) {
         this.seats = seats;
+    }
+    
+    public void setfuel_type(String fuel_type) {
+        this.fuel_type = fuel_type;
     }
     
     public void setPricePerDay(double pricePerDay) {
